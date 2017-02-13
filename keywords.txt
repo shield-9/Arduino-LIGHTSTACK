@@ -1,0 +1,36 @@
+#######################################
+# Syntax Coloring Map For Lightstack "Duemilasedici"
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+Lightstack	KEYWORD1	Lightstack
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin		KEYWORD2
+apply		KEYWORD2
+
+writeBit	KEYWORD2
+setBit		KEYWORD2
+clearBit	KEYWORD2
+readBit		KEYWORD2
+
+writeTier	KEYWORD2
+setTier		KEYWORD2
+clearTier	KEYWORD2
+readTier	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+tower	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
