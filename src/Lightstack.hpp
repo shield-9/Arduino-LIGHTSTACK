@@ -4,6 +4,7 @@
 #include "Arduino.h"
 
 enum _LS_MODE_PATTERN : uint8_t {
+	ROTATE = 0x01,
 	BLINK  = 0x02
 };
 

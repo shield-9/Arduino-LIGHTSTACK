@@ -2,6 +2,15 @@
 
 #include "Arduino.h"
 #include<Wire.h>
+#include <limits.h>
+
+template <typename T>
+T rol(T val, int8_t width) {
+	size_t max = sizeof(T) * CHAR_BIT;
+	width %= max;
+	return (val << width) | (val >> (max - width));
+}
+
 
 Lightstack::Lightstack(const uint8_t latch_pin, const uint8_t clock_pin,
 	                   const uint8_t data_pin, const uint8_t tiers) {
@@ -90,6 +99,9 @@ void Lightstack::initBits(const _LS_MODE_PATTERN pattern) {
 
 	for (uint8_t i = 0; i < _tiers; i++) {
 		switch(_pattern) {
+			case ROTATE:
+				states[i] = 0x01;
+				break;
 			case BLINK:
 				states[i] = 0x00;
 				break;
@@ -100,6 +112,9 @@ void Lightstack::initBits(const _LS_MODE_PATTERN pattern) {
 void Lightstack::calcBits() {
 	for (uint8_t i = 0; i < _tiers; i++) {
 		switch(_pattern) {
+			case ROTATE:
+				states[i] = rol(states[i], 1);
+				break;
 			case BLINK:
 				states[i] = ~states[i];
 				break;
