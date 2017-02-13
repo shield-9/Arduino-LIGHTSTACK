@@ -13,11 +13,18 @@ T rol(T val, int8_t width) {
 
 
 Lightstack::Lightstack(const uint8_t latch_pin, const uint8_t clock_pin,
-	                   const uint8_t data_pin, const uint8_t tiers) {
-	_latch_pin = latch_pin;
-	_clock_pin = clock_pin;
-	_data_pin  = data_pin;
-	_tiers     = tiers;
+	                   const uint8_t data_pin, const uint8_t tiers)
+	: Lightstack(latch_pin, clock_pin, data_pin, 0, tiers) {
+}
+
+Lightstack::Lightstack(const uint8_t latch_pin, const uint8_t clock_pin,
+	                   const uint8_t data_pin, const uint8_t output_pin,
+	                   const uint8_t tiers) {
+	_latch_pin  = latch_pin;
+	_clock_pin  = clock_pin;
+	_data_pin   = data_pin;
+	_output_pin = output_pin;
+	_tiers      = tiers;
 
 	states = new byte[_tiers];
 }
@@ -31,9 +38,12 @@ bool Lightstack::begin() {
 }
 
 bool Lightstack::begin(const _LS_MODE_PATTERN pattern) {
-	pinMode(_latch_pin, OUTPUT);
-	pinMode(_clock_pin, OUTPUT);
-	pinMode(_data_pin,  OUTPUT);
+	pinMode(_latch_pin,  OUTPUT);
+	pinMode(_clock_pin,  OUTPUT);
+	pinMode(_data_pin,   OUTPUT);
+	if (_output_pin) {
+		pinMode(_output_pin, OUTPUT);
+	}
 
 	initBits(pattern);
 	shiftOut();
@@ -49,6 +59,19 @@ void Lightstack::next() {
 void Lightstack::apply() {
 	shiftOut();
 }
+
+void Lightstack::enableOutput() {
+	if (_output_pin) {
+		digitalWrite(_output_pin, LOW);
+	}
+}
+
+void Lightstack::disableOutput() {
+	if (_output_pin) {
+		digitalWrite(_output_pin, HIGH);
+	}
+}
+
 
 /**
  * Middle Level API
@@ -105,6 +128,8 @@ void Lightstack::initBits(const _LS_MODE_PATTERN pattern) {
 			case BLINK:
 				states[i] = 0x00;
 				break;
+			default:
+				states[i] = 0x00;
 		}
 	}
 }
@@ -118,6 +143,8 @@ void Lightstack::calcBits() {
 			case BLINK:
 				states[i] = ~states[i];
 				break;
+			default:
+				states[i] = 0x00;
 		}
 	}
 }
@@ -136,4 +163,4 @@ void Lightstack::shiftOut() {
 }
 
 
-Lightstack tower = Lightstack(8, 12, 11, 5);
+Lightstack tower = Lightstack(8, 12, 11, 3, 5);

@@ -13,11 +13,17 @@ class Lightstack {
 		Lightstack(uint8_t latch_pin, uint8_t clock_pin, uint8_t data_pin,
 		           uint8_t tiers);
 
+		Lightstack(uint8_t latch_pin, uint8_t clock_pin, uint8_t data_pin,
+		           uint8_t output_pin, uint8_t tiers);
+
 		bool begin();
 		bool begin(_LS_MODE_PATTERN pattern);
 
 		void next();
 		void apply();
+
+		void enableOutput();
+		void disableOutput();
 
 		void writeBit(uint8_t tier, uint8_t bit, bool state);
 		void setBit(uint8_t tier, uint8_t bit);
@@ -33,6 +39,7 @@ class Lightstack {
 		uint8_t _latch_pin;
 		uint8_t _clock_pin;
 		uint8_t _data_pin;
+		uint8_t _output_pin;
 		uint8_t _tiers;
 		uint8_t _pattern;
 
