@@ -18,11 +18,23 @@ Lightstack::Lightstack(const uint8_t latch_pin, const uint8_t clock_pin,
  * High Level API
  */
 bool Lightstack::begin() {
+	begin(BLINK);
+}
+
+bool Lightstack::begin(const _LS_MODE_PATTERN pattern) {
 	pinMode(_latch_pin, OUTPUT);
 	pinMode(_clock_pin, OUTPUT);
 	pinMode(_data_pin,  OUTPUT);
 
+	initBits(pattern);
+	shiftOut();
+
 	return true;
+}
+
+void Lightstack::next() {
+	calcBits();
+	shiftOut();
 }
 
 void Lightstack::apply() {
@@ -73,6 +85,28 @@ byte Lightstack::readTier(const uint8_t tier) {
 /**
  * Low Level API
  */
+void Lightstack::initBits(const _LS_MODE_PATTERN pattern) {
+	_pattern = pattern;
+
+	for (uint8_t i = 0; i < _tiers; i++) {
+		switch(_pattern) {
+			case BLINK:
+				states[i] = 0x00;
+				break;
+		}
+	}
+}
+
+void Lightstack::calcBits() {
+	for (uint8_t i = 0; i < _tiers; i++) {
+		switch(_pattern) {
+			case BLINK:
+				states[i] = ~states[i];
+				break;
+		}
+	}
+}
+
 void Lightstack::shiftOut() {
 	digitalWrite(_latch_pin, LOW);
 
