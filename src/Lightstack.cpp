@@ -1,7 +1,6 @@
 #include<Lightstack.hpp>
 
 #include "Arduino.h"
-#include<Wire.h>
 #include <limits.h>
 
 template <typename T>
@@ -12,63 +11,34 @@ T rol(T val, int8_t width) {
 }
 
 
-Lightstack::Lightstack(const uint8_t latch_pin, const uint8_t clock_pin,
-	                   const uint8_t data_pin, const uint8_t tiers)
-	: Lightstack(latch_pin, clock_pin, data_pin, 0, tiers) {
-}
-
-Lightstack::Lightstack(const uint8_t latch_pin, const uint8_t clock_pin,
-	                   const uint8_t data_pin, const uint8_t output_pin,
-	                   const uint8_t tiers) {
-	_latch_pin  = latch_pin;
-	_clock_pin  = clock_pin;
-	_data_pin   = data_pin;
-	_output_pin = output_pin;
-	_tiers      = tiers;
-
-	states = new byte[_tiers];
-}
-
-
 /**
  * High Level API
  */
-bool Lightstack::begin() {
-	begin(BLINK);
+Lightstack::Lightstack() {
+	_dynamic = false;
+	states = 0x00;
+
+	for (uint8_t i = 0; i < 8; i++) {
+		pinMode(_leds[i], OUTPUT);
+	}
+
 }
 
 bool Lightstack::begin(const _LS_MODE_PATTERN pattern) {
-	pinMode(_latch_pin,  OUTPUT);
-	pinMode(_clock_pin,  OUTPUT);
-	pinMode(_data_pin,   OUTPUT);
-	if (_output_pin) {
-		pinMode(_output_pin, OUTPUT);
-	}
-
 	initBits(pattern);
-	shiftOut();
+	apply();
 
 	return true;
 }
 
 void Lightstack::next() {
-	calcBits();
-	shiftOut();
+	calcNextBits();
+	apply();
 }
 
 void Lightstack::apply() {
-	shiftOut();
-}
-
-void Lightstack::enableOutput() {
-	if (_output_pin) {
-		digitalWrite(_output_pin, LOW);
-	}
-}
-
-void Lightstack::disableOutput() {
-	if (_output_pin) {
-		digitalWrite(_output_pin, HIGH);
+	for (uint8_t i = 0; i < 8; i++) {
+		digitalWrite(_leds[i], readBit(i));
 	}
 }
 
@@ -77,41 +47,41 @@ void Lightstack::disableOutput() {
  * Middle Level API
  */
 // Single Bit Operations
-void Lightstack::writeBit(const uint8_t tier, const uint8_t bit, const bool state) {
+void Lightstack::writeBit(const uint8_t bit, const bool state) {
 	if (state) {
-		setBit(tier, bit);
+		setBit(bit);
 	} else {
-		clearBit(tier, bit);
+		clearBit(bit);
 	}
 }
 
-void Lightstack::setBit(const uint8_t tier, const uint8_t bit) {
-	states[tier] |= 0x01 << bit;
+void Lightstack::setBit(const uint8_t bit) {
+	states |= 0x01 << bit;
 }
 
-void Lightstack::clearBit(const uint8_t tier, const uint8_t bit) {
-	states[tier] &= ~(0x01 << bit);
+void Lightstack::clearBit(const uint8_t bit) {
+	states &= ~(0x01 << bit);
 }
 
-bool Lightstack::readBit(const uint8_t tier, const uint8_t bit) {
-	return states[tier] & (0x01 << bit);
+bool Lightstack::readBit(const uint8_t bit) {
+	return states & (0x01 << bit);
 }
 
-// Single Tier Operations
-void Lightstack::writeTier(const uint8_t tier, byte state) {
-	states[tier] = state;
+
+void Lightstack::write(byte state) {
+	states = state;
 }
 
-void Lightstack::setTier(const uint8_t tier) {
-	states[tier] = 0xFF;
+void Lightstack::set() {
+	write(0xFF);
 }
 
-void Lightstack::clearTier(const uint8_t tier) {
-	states[tier] = 0x00;
+void Lightstack::clear() {
+	write(0x00);
 }
 
-byte Lightstack::readTier(const uint8_t tier) {
-	return states[tier];
+byte Lightstack::read() {
+	return states;
 }
 
 /**
@@ -120,47 +90,38 @@ byte Lightstack::readTier(const uint8_t tier) {
 void Lightstack::initBits(const _LS_MODE_PATTERN pattern) {
 	_pattern = pattern;
 
-	for (uint8_t i = 0; i < _tiers; i++) {
-		switch(_pattern) {
-			case ROTATE:
-				states[i] = 0x01;
-				break;
-			case BLINK:
-				states[i] = 0x00;
-				break;
-			default:
-				states[i] = 0x00;
-		}
+	switch(_pattern) {
+		case ROTATE:
+			states = 0x01;
+			break;
+		case BLINK:
+			states = 0x00;
+			break;
+		default:
+			states = 0x00;
 	}
 }
 
-void Lightstack::calcBits() {
-	for (uint8_t i = 0; i < _tiers; i++) {
-		switch(_pattern) {
-			case ROTATE:
-				states[i] = rol(states[i], 1);
-				break;
-			case BLINK:
-				states[i] = ~states[i];
-				break;
-			default:
-				states[i] = 0x00;
-		}
+void Lightstack::calcNextBits() {
+	switch(_pattern) {
+		case ROTATE:
+			states = rol(states, 1);
+			break;
+		case BLINK:
+			switch (states) {
+				case 0xFF: // Turn off
+					states = 0x00;
+					break;
+				case 0x00: // Init
+					states = 0xFF;
+					break;
+				default:
+					states = 0x00;
+			}
+			break;
+		default:
+			states = 0x00;
 	}
 }
 
-void Lightstack::shiftOut() {
-	digitalWrite(_latch_pin, LOW);
-
-	// Make sure that the clock pin is low.
-	digitalWrite(_clock_pin, LOW);
-
-	for (uint8_t i = 0; i < _tiers; i++) {
-		::shiftOut(_data_pin, _clock_pin, MSBFIRST, states[i]);
-	}
-
-	digitalWrite(_latch_pin, HIGH);
-}
-
-
-Lightstack tower = Lightstack(8, 12, 11, 3, 5);
+Lightstack tower = Lightstack();

@@ -10,45 +10,40 @@ enum _LS_MODE_PATTERN : uint8_t {
 
 class Lightstack {
 	public:
-		Lightstack(uint8_t latch_pin, uint8_t clock_pin, uint8_t data_pin,
-		           uint8_t tiers);
-
-		Lightstack(uint8_t latch_pin, uint8_t clock_pin, uint8_t data_pin,
-		           uint8_t output_pin, uint8_t tiers);
-
-		bool begin();
-		bool begin(_LS_MODE_PATTERN pattern);
-
+		/**
+		 * High Level API
+		 */
+		Lightstack();
+		bool begin(const _LS_MODE_PATTERN pattern);
 		void next();
 		void apply();
 
-		void enableOutput();
-		void disableOutput();
+		/**
+		 * Middle Level API
+		 */
+		// Single Bit Operations
+		void writeBit(const uint8_t bit, const bool state);
+		void setBit(const uint8_t bit);
+		void clearBit(const uint8_t bit);
+		bool readBit(const uint8_t bit);
 
-		void writeBit(uint8_t tier, uint8_t bit, bool state);
-		void setBit(uint8_t tier, uint8_t bit);
-		void clearBit(uint8_t tier, uint8_t bit);
-		bool readBit(uint8_t tier, uint8_t bit);
-
-		void writeTier(uint8_t tier, byte states);
-		void setTier(uint8_t tier);
-		void clearTier(uint8_t tier);
-		byte readTier(uint8_t tier);
+		void write(byte state);
+		void set();
+		void clear();
+		byte read();
 
 	private:
-		uint8_t _latch_pin;
-		uint8_t _clock_pin;
-		uint8_t _data_pin;
-		uint8_t _output_pin;
-		uint8_t _tiers;
+		uint8_t _leds[8] = {0, 1, 2, 3, 5, 7, 8, 9};
+
 		uint8_t _pattern;
+		bool _dynamic;
+		byte states;
 
-		byte* states;
-
-		void initBits(_LS_MODE_PATTERN pattern);
-		void calcBits();
-
-		void shiftOut();
+		/**
+		 * Low Level API
+		 */
+		void initBits(const _LS_MODE_PATTERN pattern);
+		void calcNextBits();
 };
 
 extern Lightstack tower;
