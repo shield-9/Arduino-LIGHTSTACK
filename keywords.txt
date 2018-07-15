@@ -6,7 +6,7 @@
 # Datatypes (KEYWORD1)
 #######################################
 
-Lightstack	KEYWORD1	Lightstack
+Lightstack	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
